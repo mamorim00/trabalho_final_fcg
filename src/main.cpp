@@ -236,7 +236,7 @@ bool tecla_S_pressionada = false;
 bool tecla_D_pressionada = false;
 bool tecla_W_pressionada = false;
 
-bool freeCamera = false;
+bool freeCamera = true;
 
 float delta_t = 0.0f;
 
@@ -411,7 +411,7 @@ int main(int argc, char* argv[])
     // Criamos uma janela do sistema operacional, com 800 colunas e 600 linhas
     // de pixels, e com título "INF01047 ...".
     GLFWwindow* window;
-    window = glfwCreateWindow(800, 600, "INF01047 - 00313306 - Thiago Parisotto Dias", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "INF01047 - Trabalho Final", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -465,9 +465,9 @@ int main(int argc, char* argv[])
     ComputeNormals(&spheremodel);
     BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-    ObjModel bunnymodel("../../data/Linux Penguin.obj");
-    ComputeNormals(&bunnymodel);
-    BuildTrianglesAndAddToVirtualScene(&bunnymodel);
+    ObjModel penguinmodel("../../data/Linux Penguin.obj");
+    ComputeNormals(&penguinmodel);
+    BuildTrianglesAndAddToVirtualScene(&penguinmodel);
 
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
@@ -499,14 +499,14 @@ int main(int argc, char* argv[])
     float enemySpawnTimer = enemySpawnTimerMax;
     int maxEnemies = 5;
     Game *jogo = new Game();
-    Player *jogador = new Player(glm::vec4(0.0f,0.0f,0.0f,1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    Player *jogador = new Player(glm::vec4(0.0f,-0.5f,0.0f,1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f));
 
     //velocidade da camera e tempo inicial
     float prev_time = 0.0f;
     float speed = 0.5f;
+    glm::vec4 camera_position_c = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "c", centro da câmera
 
     //////////////
-
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -537,29 +537,37 @@ int main(int argc, char* argv[])
         float y = r*sin(g_CameraPhi);
         float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
         float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
+        if(freeCamera){
+            jogador->direction.x =  -r*cos(g_CameraPhi)*sin(g_CameraTheta);
+            jogador->direction.y =  -r*sin(g_CameraPhi);
+            jogador->direction.z =  -r*cos(g_CameraPhi)*cos(g_CameraTheta);
 
-        glm::vec4 camera_position_c; // Ponto "c", centro da câmera
+        }
+
         glm::vec4 camera_lookat_l; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_view_vector;// Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector; // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+        glm::vec4 view_position;
 
         if(!freeCamera){
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         camera_position_c  = glm::vec4(x,y,z,1.0f); // Ponto "c", centro da câmera
-        jogador->playerSetPosition(camera_position_c);
-        //camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+        camera_lookat_l    = glm::vec4(0,0,0,1);//jogador->getPosition(); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
         camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+        view_position = camera_position_c;
         }
         else{
-        camera_view_vector = glm::vec4(-x,-y,-z,0.0f); // Vetor "view", sentido para onde a câmera está virada
+        camera_view_vector = jogador->getDirection();//glm::vec4(-x,-y,-z,0.0f); // Vetor "view", sentido para onde a câmera está virada
         jogador->playerMoveDirection(camera_view_vector);
         camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+        view_position = jogador->getPosition();
         }
+
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
+        glm::mat4 view = Matrix_Camera_View(view_position, camera_view_vector, camera_up_vector);
 
         // Agora computamos a matriz de Projeção.
         glm::mat4 projection;
@@ -581,24 +589,24 @@ int main(int argc, char* argv[])
 
 
         //Calculo da movimentação da camera livre
-        if(tecla_A_pressionada){
-            camera_position_c +=  -vector_u * speed * delta_t *floor;
-            jogador->playerMove( -vector_u * speed * delta_t *floor);
-        }
-        if(tecla_W_pressionada){
-            camera_position_c +=  +camera_view_vector * speed * delta_t *floor;
-            jogador->playerMove( -vector_u * speed * delta_t *floor);
-        }
-        if(tecla_S_pressionada){
-            camera_position_c +=   -camera_view_vector * speed * delta_t * floor;
-            jogador->playerMove( -vector_u * speed * delta_t *floor);
-        }
-        if(tecla_D_pressionada){
-            camera_position_c +=   vector_u * speed * delta_t * floor;
-            jogador->playerMove( -vector_u * speed * delta_t *floor);
+        if(freeCamera){
+            if(tecla_A_pressionada){
 
-        }
+                jogador->playerMove( -vector_u * speed * delta_t *floor);
+            }
+            if(tecla_W_pressionada){
 
+                jogador->playerMove( +camera_view_vector * speed * delta_t *floor);
+            }
+            if(tecla_S_pressionada){
+
+                jogador->playerMove( -camera_view_vector * speed * delta_t * floor);
+            }
+            if(tecla_D_pressionada){
+                jogador->playerMove( vector_u * speed * delta_t * floor);
+
+            }
+        }
         //bola de neve ######################################
         jogo->checkCollision(snowballs, enemies);
         jogo->checkHp(enemies);
@@ -609,7 +617,7 @@ int main(int argc, char* argv[])
                 int x = 5.0 + static_cast <float> (rand()) / ( static_cast <float> (RAND_MAX/(5.0-7.0))),
                     y = 0.0f,
                     z = 5.0 + static_cast <float> (rand()) / ( static_cast <float> (RAND_MAX/(5.0-7.0)));
-                Enemy *newEnemie = new Enemy(glm::vec4(x,y,z,0.0f), glm::vec4(-1.0f,0.0f,-1.0f,0.0f));
+                Enemy *newEnemie = new Enemy(glm::vec4(x,-0.2,z,0.0f), glm::vec4(-1.0f,0.0f,-1.0f,0.0f));
                 enemies.push_back(*newEnemie);
 
                 enemySpawnTimer = 0.0f;
@@ -618,7 +626,7 @@ int main(int argc, char* argv[])
                 enemySpawnTimer += 1.0f;
         }
         for(size_t j = 0; j < enemies.size(); j++){
-            enemies[j].enemyMove(delta_t, camera_position_c);
+            enemies[j].enemyMove(delta_t, jogador->getPosition());
         }
 
 
@@ -626,7 +634,7 @@ int main(int argc, char* argv[])
  //         new snowball(camera_view_vector, camera_view_vector);
             //calculando a posição em que o jogador segura a bola, depende de onde o jogador está e para onde está olhando
             glm::vec4 norm_view = glm::vec4((camera_view_vector/norm(camera_view_vector)).x, (camera_view_vector/norm(camera_view_vector)).y,(camera_view_vector/norm(camera_view_vector)).z, 0.0f);
-            glm::vec4 hold = glm::vec4(camera_position_c.x + 0.5f * norm_view.x, camera_position_c.y - 0.05f, camera_position_c.z + 0.5f * norm_view.z, 0.0f);
+            glm::vec4 hold = glm::vec4(jogador->getPosition().x + 0.5f * norm_view.x, jogador->getPosition().y - 0.05f, jogador->getPosition().z + 0.5f * norm_view.z, 0.0f);
             //caso não esteja segurando nenhuma bola, cria uma nova na posição em que o jogador a segura
             if(!holding){
                 Snowball *newBall = new Snowball(hold, camera_view_vector);
@@ -685,7 +693,7 @@ int main(int argc, char* argv[])
         #define BUNNY  1
         #define PLANE  2
 
-        // Desenhamos o modelo da esfera
+       /* // Desenhamos o modelo da esfera
         model = Matrix_Translate(-1.0f,0.0f,0.0f)
               * Matrix_Rotate_Z(0.6f)
               * Matrix_Rotate_X(0.2f)
@@ -693,17 +701,18 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, SPHERE);
         DrawVirtualObject("the_sphere");
-
-        // Desenhamos o modelo do coelho
-        model = Matrix_Scale(0.05f, 0.05f,0.05f)
-              *Matrix_Translate(1.0f,-5.0f,0.0f)
+*/
+        // Desenhamos o modelo do pinguim
+        if(!freeCamera){
+        model = Matrix_Translate(jogador->getPosition().x,-0.2f,jogador->getPosition().z)
+              * Matrix_Scale(0.05f, 0.05f,0.05f)
               * Matrix_Rotate_Z(g_AngleZ)
               * Matrix_Rotate_Y(g_AngleY)
               * Matrix_Rotate_X(g_AngleX);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, BUNNY);
         DrawVirtualObject("penguin");
-
+        }
         // Desenhamos o plano do chão
         model = Matrix_Translate(0.0f,-1.1f,0.0f)
               * Matrix_Scale(20.0f, 0.2f, 20.0f)
@@ -713,6 +722,7 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_plane");
 
         ///////////////////////////////////////////
+        //modelo dos inimigos
         for(size_t j = 0; j < enemies.size();j++){
                 model = Matrix_Translate(enemies[j].position.x,enemies[j].position.y,enemies[j].position.z) * Matrix_Scale(0.05f, 0.05f, 0.05f);
                        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
@@ -720,7 +730,7 @@ int main(int argc, char* argv[])
                        DrawVirtualObject("penguin");
 
         }
-
+        //modelo das bolas de neve
         for(size_t j = 0; j < snowballs.size();j++){
             //if(snowballs[j].isShooting)
                 model = Matrix_Translate(snowballs[j].position.x,snowballs[j].position.y,snowballs[j].position.z) * Matrix_Scale(0.2f, 0.2f, 0.2f);
