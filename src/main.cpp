@@ -534,15 +534,14 @@ int main(int argc, char* argv[])
         // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
         // e ScrollCallback().
         float r = g_CameraDistance;
-        float y = r*sin(g_CameraPhi);
-        float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
-        float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
-        if(freeCamera){
-            jogador->direction.x =  -r*cos(g_CameraPhi)*sin(g_CameraTheta);
-            jogador->direction.y =  -r*sin(g_CameraPhi);
-            jogador->direction.z =  -r*cos(g_CameraPhi)*cos(g_CameraTheta);
+        float y = jogador->getPosition().y + r*sin(g_CameraPhi);
+        float z = jogador->getPosition().z + r*cos(g_CameraPhi)*cos(g_CameraTheta);
+        float x = jogador->getPosition().x + r*cos(g_CameraPhi)*sin(g_CameraTheta);
+        jogador->direction.x =  -r*cos(g_CameraPhi)*sin(g_CameraTheta);
+        jogador->direction.y =  -r*sin(g_CameraPhi);
+        jogador->direction.z =  -r*cos(g_CameraPhi)*cos(g_CameraTheta);
 
-        }
+
 
         glm::vec4 camera_lookat_l; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_view_vector;// Vetor "view", sentido para onde a câmera está virada
@@ -553,8 +552,8 @@ int main(int argc, char* argv[])
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         camera_position_c  = glm::vec4(x,y,z,1.0f); // Ponto "c", centro da câmera
-        camera_lookat_l    = glm::vec4(0,0,0,1);//jogador->getPosition(); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-        camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
+        camera_lookat_l    = jogador->getPosition();//glm::vec4(0,0,0,1);//jogador->getPosition(); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+        camera_view_vector = (camera_lookat_l - camera_position_c)/norm(camera_lookat_l - camera_position_c); // Vetor "view", sentido para onde a câmera está virada
         camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
         view_position = camera_position_c;
         }
@@ -578,7 +577,7 @@ int main(int argc, char* argv[])
         float farplane  = -10.0f; // Posição do "far plane"
 
         //////////
-        glm::vec4 vector_u = crossproduct(camera_view_vector, camera_up_vector);
+        glm::vec4 vector_u = crossproduct(glm::vec4(jogador->getDirection().x,jogador->getDirection().y,jogador->getDirection().z,0.0f), camera_up_vector);
         //Calculo do delta_t
         float current_time = (float)glfwGetTime();
         delta_t = current_time - prev_time;
@@ -589,24 +588,24 @@ int main(int argc, char* argv[])
 
 
         //Calculo da movimentação da camera livre
-        if(freeCamera){
+
             if(tecla_A_pressionada){
 
                 jogador->playerMove( -vector_u * speed * delta_t *floor);
             }
             if(tecla_W_pressionada){
 
-                jogador->playerMove( +camera_view_vector * speed * delta_t *floor);
+                jogador->playerMove( jogador->getDirection() * speed * delta_t *floor);
             }
             if(tecla_S_pressionada){
 
-                jogador->playerMove( -camera_view_vector * speed * delta_t * floor);
+                jogador->playerMove( -jogador->getDirection() * speed * delta_t * floor);
             }
             if(tecla_D_pressionada){
                 jogador->playerMove( vector_u * speed * delta_t * floor);
 
             }
-        }
+
         //bola de neve ######################################
         jogo->checkCollision(snowballs, enemies);
         jogo->checkHp(enemies);
