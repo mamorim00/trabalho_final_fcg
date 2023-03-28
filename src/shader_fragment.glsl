@@ -20,8 +20,10 @@ uniform mat4 projection;
 
 // Identificador que define qual objeto está sendo desenhado no momento
 #define SPHERE 0
-#define BUNNY  1
+#define PENGUIN  1
 #define PLANE  2
+#define PENGUINPLAYER 3
+
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -108,7 +110,7 @@ void main()
 
         Kd0 = texture(TextureImage2, vec2(U,V)).rgb * (lambert + 0.01);
     }
-    else if ( object_id == BUNNY )
+    else if ( object_id == PENGUIN )
     {
         // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
         // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
@@ -153,6 +155,41 @@ void main()
         lambert = max(0,(dot(n,l)));
 
         Kd0 = texture(TextureImage2, vec2(U,V)).rgb * (lambert + 0.01);
+    }
+    else if( object_id == PENGUINPLAYER )
+    {
+        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
+        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
+        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
+        // e também use as variáveis min*/max* definidas abaixo para normalizar
+        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
+        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
+        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
+        // Veja também a Questão 4 do Questionário 4 no Moodle.
+
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+
+
+        U = (position_model.x - minx)/(maxx - minx);
+        V = (position_model.y-miny)/(maxy - miny);
+
+        // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
+        Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
+
+        // Equação de Iluminação
+        lambert = max(0,(dot(n,l)));
+
+        Kd0 = texture(TextureImage1, vec2(U,V)).rgb * (lambert + 0.01);
+
+
     }
 
 

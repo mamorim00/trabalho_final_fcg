@@ -2558,7 +2558,7 @@
 	<fstream>
 	<sstream>
 
-1679839449 source:c:\users\user\desktop\ufrgs\fundamentos de computação gráfica\trabalho final\src\main.cpp
+1679961886 source:c:\users\user\desktop\ufrgs\fundamentos de computação gráfica\trabalho final\src\main.cpp
 	<cmath>
 	<cstdio>
 	<cstdlib>
@@ -2582,6 +2582,7 @@
 	"utils.h"
 	"matrices.h"
 	<vector>
+	"collisions.h"
 
 1674246957 c:\users\user\desktop\ufrgs\fundamentos de computação gráfica\trabalho final\include\glm\gtc\type_ptr.hpp
 	"../gtc/quaternion.hpp"
@@ -2848,4 +2849,14 @@
 	<glm/mat4x4.hpp>
 	<glm/vec4.hpp>
 	<glm/gtc/matrix_transform.hpp>
+
+1679961168 source:c:\users\user\desktop\ufrgs\fundamentos de computação gráfica\trabalho final\src\collisions.cpp
+	<cmath>
+	<cstdio>
+	<cstdlib>
+	<iostream>
+	<glm/vec4.hpp>
+
+1679961168 c:\users\user\desktop\ufrgs\fundamentos de computação gráfica\trabalho final\src\collisions.h
+	"matrices.h"
 

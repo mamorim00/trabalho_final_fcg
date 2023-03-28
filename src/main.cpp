@@ -48,7 +48,7 @@
 #include "utils.h"
 #include "matrices.h"
 #include<vector>
-
+#include "collisions.h"
 #define end_map 10
 #define ceiling 10
 
@@ -238,6 +238,8 @@ bool tecla_W_pressionada = false;
 
 bool freeCamera = true;
 
+
+
 float delta_t = 0.0f;
 
 class Snowball{
@@ -290,68 +292,9 @@ class Enemy{
         }
         void takeDamage(){
             this->hp --;
-            std::cout << this->hp << std::endl;
         }
     };
-class Game{
-public:
 
-    int points;
-
-    Game(){
-        this->points = 0;
-    }
-    void checkHp(std::vector<Enemy> &enemies){
-        for(size_t j = 0; j < enemies.size(); j ++){
-            if(enemies[j].hp <= 0){
-                enemies[j].kill();
-                enemies.erase(enemies.begin()+j);
-            }
-        }
-
-    }
-    void checkCollision(std::vector<Snowball> &snowballs, std::vector<Enemy> &enemies){
-
-        //collision snowballs/floor/ceiling
-        for(size_t j = 0; j < snowballs.size(); j ++){
-            if(snowballs[j].position.y <= -0.6f ||
-               snowballs[j].position.y >= ceiling ){
-                snowballs[j].collide();
-                snowballs.erase(snowballs.begin() + j);
-            }
-            //collision snowballs/endMap
-            if(snowballs[j].position.x >= end_map ||
-               snowballs[j].position.x <= -end_map ||
-               snowballs[j].position.z >= end_map ||
-               snowballs[j].position.z <= -end_map ){
-                    snowballs[j].collide();
-                    snowballs.erase(snowballs.begin() + j);
-               }
-            //collision snowballs/enemies
-            for(size_t i = 0; i < enemies.size(); i++){
-                if(enemies[i].isAlive){
-                    if(fabs(snowballs[j].position.x - enemies[i].position.x) < 0.1f)
-                    {
-                        if(fabs(snowballs[j].position.y - enemies[i].position.y) < 0.1f)
-                        {
-                            if(fabs(snowballs[j].position.z - enemies[i].position.z) < 0.1f){
-                                snowballs[j].collide();
-                                snowballs.erase(snowballs.begin() + j);
-                                enemies[i].takeDamage();
-                            }
-
-                        }
-
-                    }
-                }
-            }
-        }
-        //collision player/enemies
-
-    }
-
-
-};
 class Player{
 public:
     float speed;
@@ -380,6 +323,68 @@ public:
     }
 
 };
+class Game{
+public:
+
+    int points;
+
+    Game(){
+        this->points = 0;
+    }
+    void checkHp(std::vector<Enemy> &enemies){
+        for(size_t j = 0; j < enemies.size(); j ++){
+            if(enemies[j].hp <= 0){
+                enemies[j].kill();
+                enemies.erase(enemies.begin()+j);
+            }
+        }
+
+    }
+
+ void checkCollision(std::vector<Snowball> &snowballs, std::vector<Enemy> &enemies){
+
+        //collision snowballs/floor/ceiling
+        for(size_t j = 0; j < snowballs.size(); j ++){
+            if(checkCollisionBallsMap(snowballs[j].position) == true){
+                snowballs[j].collide();
+                snowballs.erase(snowballs.begin() + j);
+
+            }
+            //collision snowballs/enemies
+            for(size_t i = 0; i < enemies.size(); i++){
+                if(enemies[i].isAlive){
+                    if(checkCollisionBallEnemie(snowballs[j].position, enemies[i].position) == true)
+                    {
+
+                                snowballs[j].collide();
+                                snowballs.erase(snowballs.begin() + j);
+                                enemies[i].takeDamage();
+
+
+                    }
+
+                }
+            }
+
+
+        }
+    }
+
+    void checkCollisionPE(std::vector<Enemy> &enemies, Player * jogador){
+            for(size_t i = 0; i < enemies.size(); i++){
+            if(enemies[i].isAlive){
+                if(checkCollisionPlayerEnemie(jogador->getPosition(), enemies[i].position) == true){
+                    jogador->hp --;
+
+                    enemies[i].hp = 0;
+                }
+            }
+        }
+    }
+
+};
+
+
 
 /////////////////////////////////////////////////////
 int main(int argc, char* argv[])
@@ -457,7 +462,7 @@ int main(int argc, char* argv[])
 
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/textura.jpg");      // TextureImage0
-    LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
+    LoadTextureImage("../../data/texture_gravel.jpg"); // TextureImage1
     LoadTextureImage("../../data/textura_neve.jpg");    // TextureImage2
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
@@ -501,6 +506,7 @@ int main(int argc, char* argv[])
     Game *jogo = new Game();
     Player *jogador = new Player(glm::vec4(0.0f,-0.5f,0.0f,1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f));
 
+
     //velocidade da camera e tempo inicial
     float prev_time = 0.0f;
     float speed = 0.5f;
@@ -509,7 +515,7 @@ int main(int argc, char* argv[])
     //////////////
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
-    while (!glfwWindowShouldClose(window))
+    while ((!glfwWindowShouldClose(window)) && jogador->hp > 0)
     {
         // Aqui executamos as operações de renderização
 
@@ -608,6 +614,7 @@ int main(int argc, char* argv[])
 
         //bola de neve ######################################
         jogo->checkCollision(snowballs, enemies);
+        jogo->checkCollisionPE(enemies, jogador);
         jogo->checkHp(enemies);
         //spawn do inimigo
         if(enemies.size() < maxEnemies){
@@ -689,8 +696,10 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
         #define SPHERE 0
-        #define BUNNY  1
+        #define PENGUIN  1
         #define PLANE  2
+        #define PENGUINPLAYER 3
+
 
        /* // Desenhamos o modelo da esfera
         model = Matrix_Translate(-1.0f,0.0f,0.0f)
@@ -709,7 +718,7 @@ int main(int argc, char* argv[])
               * Matrix_Rotate_Y(g_AngleY)
               * Matrix_Rotate_X(g_AngleX);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY);
+        glUniform1i(g_object_id_uniform, PENGUINPLAYER);
         DrawVirtualObject("penguin");
         }
         // Desenhamos o plano do chão
@@ -725,7 +734,7 @@ int main(int argc, char* argv[])
         for(size_t j = 0; j < enemies.size();j++){
                 model = Matrix_Translate(enemies[j].position.x,enemies[j].position.y,enemies[j].position.z) * Matrix_Scale(0.05f, 0.05f, 0.05f);
                        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-                       glUniform1i(g_object_id_uniform, BUNNY);
+                       glUniform1i(g_object_id_uniform, PENGUIN);
                        DrawVirtualObject("penguin");
 
         }
