@@ -242,33 +242,77 @@ bool freeCamera = true;
 
 float delta_t = 0.0f;
 
-class Snowball{
+
+
+class snowball{
 public:
     bool isShooting;
     glm::vec4 position;
     glm::vec4 direction;
     float speed;
-    Snowball(glm::vec4 position, glm::vec4 direction)
+    glm::vec4 startPoint;
+    glm::vec4 endPoint ;
+    glm::vec4 controlPoint1;
+    glm::vec4 controlPoint2;
+    float timeOnCurve;
+    float totalTimeOnCurve = 10.0f;
+    snowball(glm::vec4 position, glm::vec4 direction)
     {
         isShooting = false;
-        speed = 5.0f;
+        speed = 10.0f;
         this->direction = direction;
         this->position = position;
+        timeOnCurve = 0.0f;
+        totalTimeOnCurve = 1.0f;
     }
+
     void ballMove(float deltat){
-        this->position += this->direction * this->speed * deltat;
+        if (isShooting) {
+            // Use cubic Bézier curve to move snowball
+            glm::vec4 curvePos = calculateBezierCurvePosition();
+            this->position = curvePos;
+            this->timeOnCurve += deltat;
+            if (timeOnCurve >= totalTimeOnCurve) {
+                // Snowball has reached the end of the curve
+                isShooting = false;
+            }
+        } else {
+            this->position += this->direction * this->speed * deltat;
+        }
     }
-    void shoot(){
+
+    void shoot(glm::vec4 startPoint, glm::vec4 endPoint, glm::vec4 controlPoint1, glm::vec4 controlPoint2, float totalTimeOnCurve){
         this->isShooting = true;
+        this->startPoint = startPoint;
+        this->endPoint = endPoint;
+        this->controlPoint1 = controlPoint1;
+        this->controlPoint2 = controlPoint2;
+        this->totalTimeOnCurve = totalTimeOnCurve;
+        this->timeOnCurve = 0.0f;
     }
+
     void setPosDir(glm::vec4 position, glm::vec4 direction){
         this->position = position;
         this->direction = direction;
     }
+
     void collide(){
         this->isShooting = false;
     }
+
+private:
+    glm::vec4 calculateBezierCurvePosition() {
+        // Calculate position on cubic Bézier curve based on current time on curve
+        float t = timeOnCurve / totalTimeOnCurve;
+        float oneMinusT = 1.0f - t;
+        glm::vec4 curvePos = startPoint * oneMinusT * oneMinusT * oneMinusT +
+                             3.0f * controlPoint1 * oneMinusT * oneMinusT * t +
+                             3.0f * controlPoint2 * oneMinusT * t * t +
+                             endPoint * t * t * t;
+        return curvePos;
+    }
 };
+
 class Enemy{
     public:
         bool isAlive = false;
