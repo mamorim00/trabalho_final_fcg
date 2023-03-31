@@ -353,14 +353,12 @@ public:
             //collision snowballs/enemies
             for(size_t i = 0; i < enemies.size(); i++){
                 if(enemies[i].isAlive){
-                    if(checkCollisionBallEnemie(snowballs[j].position, enemies[i].position) == true)
+                    //if(checkCollisionBallEnemie(snowballs[j].position, enemies[i].position) == true)
+                    if(checkCollisionBoxBall(enemies[i].position, snowballs[j].position) == true)
                     {
-
                                 snowballs[j].collide();
                                 snowballs.erase(snowballs.begin() + j);
                                 enemies[i].takeDamage();
-
-
                     }
 
                 }
@@ -373,7 +371,9 @@ public:
     void checkCollisionPE(std::vector<Enemy> &enemies, Player * jogador){
             for(size_t i = 0; i < enemies.size(); i++){
             if(enemies[i].isAlive){
-                if(checkCollisionPlayerEnemie(jogador->getPosition(), enemies[i].position) == true){
+                //if(checkCollisionPlayerEnemie(jogador->getPosition(), enemies[i].position) == true){
+
+                  if(checkCollisionBoxBox(jogador->getPosition(), enemies[i].position) == true){
                     jogador->hp --;
 
                     enemies[i].hp = 0;
@@ -500,7 +500,7 @@ int main(int argc, char* argv[])
     bool holding = false;
     std::vector<Snowball> snowballs;
     std::vector <Enemy> enemies;
-    float enemySpawnTimerMax = 500.0f;
+    float enemySpawnTimerMax = 100.0f;
     float enemySpawnTimer = enemySpawnTimerMax;
     int maxEnemies = 5;
     Game *jogo = new Game();
@@ -619,10 +619,10 @@ int main(int argc, char* argv[])
         //spawn do inimigo
         if(enemies.size() < maxEnemies){
             if(enemySpawnTimer >= enemySpawnTimerMax){
-                //isso pode ser uma função
-                int x = 5.0 + static_cast <float> (rand()) / ( static_cast <float> (RAND_MAX/(5.0-7.0))),
+                int x = jogador->getPosition().x + 5.0 + (rand() % 2 == 0 ? 1 : -1)*static_cast <float> (rand()) / ( static_cast <float> (RAND_MAX/(10))),
                     y = 0.0f,
-                    z = 5.0 + static_cast <float> (rand()) / ( static_cast <float> (RAND_MAX/(5.0-7.0)));
+                    z = jogador->getPosition().z + 5.0 + (rand() % 2 == 0 ? 1 : -1)*static_cast <float> (rand()) / ( static_cast <float> (RAND_MAX/(10)));
+
                 Enemy *newEnemie = new Enemy(glm::vec4(x,-0.2,z,0.0f), glm::vec4(-1.0f,0.0f,-1.0f,0.0f));
                 enemies.push_back(*newEnemie);
 
