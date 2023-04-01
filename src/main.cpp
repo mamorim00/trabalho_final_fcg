@@ -680,36 +680,43 @@ int main(int argc, char* argv[])
         }
 
 
+
         if(g_RightMouseButtonPressed){
- //         new snowball(camera_view_vector, camera_view_vector);
             //calculando a posição em que o jogador segura a bola, depende de onde o jogador está e para onde está olhando
             glm::vec4 norm_view = glm::vec4((camera_view_vector/norm(camera_view_vector)).x, (camera_view_vector/norm(camera_view_vector)).y,(camera_view_vector/norm(camera_view_vector)).z, 0.0f);
-            glm::vec4 hold = glm::vec4(jogador->getPosition().x + 0.5f * norm_view.x, jogador->getPosition().y - 0.05f, jogador->getPosition().z + 0.5f * norm_view.z, 0.0f);
+            glm::vec4 hold = glm::vec4(camera_position_c.x + 0.3f * norm_view.x, camera_position_c.y - 0.05f, camera_position_c.z + 0.3f * norm_view.z, 0.0f);
             //caso não esteja segurando nenhuma bola, cria uma nova na posição em que o jogador a segura
             if(!holding){
-                Snowball *newBall = new Snowball(hold, camera_view_vector);
+                snowball *newBall = new snowball(hold, camera_view_vector);
                 snowballs.push_back(*newBall);
             }
-            //caso já esteja segurando a bola, apenas realoca para a nova posição para o caso de a camera ter sido alterada
+            //caso já esteja segurando a bola, apenas realoca para a nova posição para o caso de a câmera ter sido alterada
             snowballs[snowballs.size() - 1].setPosDir(hold, camera_view_vector);
             //para sabermos que já existe uma bola sendo segurada
             holding = true;
         }
         else{
             //bola atirada
+            if(snowballs.size() > 0 && holding){
+                glm::vec4 norm_view = glm::vec4((camera_view_vector/norm(camera_view_vector)).x, (camera_view_vector/norm(camera_view_vector)).y,(camera_view_vector/norm(camera_view_vector)).z, 0.0f);
+                glm::vec4 hold = snowballs[snowballs.size() - 1].position;
+                glm::vec4 target = glm::vec4(hold.x + camera_view_vector.x * 5.0f, hold.y + camera_view_vector.y * 5.0f, hold.z + camera_view_vector.z * 5.0f, 0.0f);
+                glm::vec4 control_point1 = hold + 0.3f * (target - hold);
+                glm::vec4 control_point2 = target - 0.3f * (target - hold);
+                snowballs[snowballs.size() - 1].shoot(hold,control_point1, control_point2, target, 5.0);
+            }
             holding = false;
-            if(snowballs.size() > 0)
-                snowballs[snowballs.size() - 1].shoot();
         }
         //movimenta todas as bolas
-        if(snowballs.size() > 0)
-        //movemos todas as bolas com o tempo delta_t
-        for(size_t j = 0; j < snowballs.size();j++){
-            if(snowballs[j].isShooting)
-                snowballs[j].ballMove(delta_t);
+        if(snowballs.size() > 0){
+            //movemos todas as bolas com o tempo delta_t
+            for(size_t j = 0; j < snowballs.size();j++){
+                if(snowballs[j].isShooting)
+                    snowballs[j].ballMove(delta_t);
+            }
         }
-        /////////
-
+        
+        
          if (g_UsePerspectiveProjection)
         {
             // Projeção Perspectiva.
